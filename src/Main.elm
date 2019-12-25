@@ -1,22 +1,27 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, text, div, h1, img)
-import Html.Attributes exposing (src)
+import Html exposing (..)
+import Html.Attributes exposing (..)
 
 
 ---- MODEL ----
 
 
 type alias Model =
-    {}
+    {emAtendimento: List Senha
+    , ultimaSenha: Maybe Senha}
 
+type alias Senha = String
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
+    ( initialModel, Cmd.none )
 
-
+initialModel : Model
+initialModel = 
+    {emAtendimento = ["P002", "C003"]
+    , ultimaSenha = Just "P003"}
 
 ---- UPDATE ----
 
@@ -37,11 +42,38 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
+        [ viewEmAtendimento model
+        , viewUltimaSenha model
         ]
 
+viewEmAtendimento : Model -> Html Msg
+viewEmAtendimento model =
+    div [] [
+        text "Em atendimento"
+        , div [] [
+                    div []
+        (List.map (\senha -> p [] [text senha]) model.emAtendimento)
+                ]
+    ]
 
+viewUltimaSenha : Model -> Html Msg
+viewUltimaSenha model =
+    let
+        header = p[] [text "Ultima senha: "]
+        content = 
+            case model.ultimaSenha of
+                Nothing -> text ""
+
+                Just ultimaSenha ->
+                    div [] [
+                            p [] [text ultimaSenha]
+                            ]
+    in
+        div [] [
+            header
+            ,content
+        ]
+    
 
 ---- PROGRAM ----
 
