@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Http
 
 ---- MODEL ----
 
@@ -25,13 +26,24 @@ initialModel =
 ---- UPDATE ----
 
 
-type Msg
-    = NoOp
+type Msg =
+    NewEntries (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        NewEntries (Ok jsonString) ->
+            let
+                _= Debug.log "It worked! " jsonString
+            in
+                ({model | ultimasSenhas = jsonString :: model.ultimasSenhas}, Cmd.none)
+
+        NewEntries (Err error) ->
+            let
+                _ = Debug.log "Oops, not as we wished! " error
+            in
+                (model, Cmd.none)
 
 
 
@@ -64,6 +76,13 @@ viewultimasSenhas model =
             ]
     
 
+---- COMMANDS ---    
+
+getEntries : Cmd Msg
+getEntries = 
+    Http.get{url = "http://localhost:8080/ultimas-senhas"
+    ,expect = Http.expectString NewEntries}
+
 ---- PROGRAM ----
 
 
@@ -71,7 +90,7 @@ main : Program () Model Msg
 main =
     Browser.element
         { view = view
-        , init = \_ -> init
+        , init = \_ -> (initialModel, getEntries)
         , update = update
         , subscriptions = always Sub.none
         }
