@@ -4,13 +4,12 @@ import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
-
 ---- MODEL ----
 
 
 type alias Model =
     {emAtendimento: List Senha
-    , ultimaSenha: Maybe Senha}
+    , ultimasSenhas: List Senha}
 
 type alias Senha = String
 
@@ -21,7 +20,7 @@ init =
 initialModel : Model
 initialModel = 
     {emAtendimento = ["P002", "C003"]
-    , ultimaSenha = Just "P003"}
+    , ultimasSenhas = ["P003", "P004"]}
 
 ---- UPDATE ----
 
@@ -43,36 +42,26 @@ view : Model -> Html Msg
 view model =
     div []
         [ viewEmAtendimento model
-        , viewUltimaSenha model
+        , viewultimasSenhas model
         ]
 
 viewEmAtendimento : Model -> Html Msg
 viewEmAtendimento model =
     div [] [
-        text "Em atendimento"
+            text "Em atendimento"
         , div [] [
                     div []
         (List.map (\senha -> p [] [text senha]) model.emAtendimento)
                 ]
     ]
 
-viewUltimaSenha : Model -> Html Msg
-viewUltimaSenha model =
-    let
-        header = p[] [text "Ultima senha: "]
-        content = 
-            case model.ultimaSenha of
-                Nothing -> text ""
-
-                Just ultimaSenha ->
-                    div [] [
-                            p [] [text ultimaSenha]
-                            ]
-    in
-        div [] [
-            header
-            ,content
-        ]
+viewultimasSenhas : Model -> Html Msg
+viewultimasSenhas model =
+    div [] [
+            text "Senhas solicitadas"
+            ,div []
+                    (List.map (\senha -> p [] [text senha]) model.ultimasSenhas)
+            ]
     
 
 ---- PROGRAM ----
