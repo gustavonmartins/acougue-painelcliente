@@ -16,7 +16,7 @@ type alias Senha = String
 
 init : ( Model, Cmd Msg )
 init =
-    ( initialModel, Cmd.none )
+    ( initialModel, getEntries )
 
 initialModel : Model
 initialModel = 
@@ -90,7 +90,7 @@ main : Program () Model Msg
 main =
     Browser.element
         { view = view
-        , init = \_ -> (initialModel, getEntries)
+        , init = \_ -> init
         , update = update
         , subscriptions = always Sub.none
         }
