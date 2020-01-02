@@ -4,6 +4,7 @@ import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
+import Time
 
 ---- MODEL ----
 
@@ -28,6 +29,7 @@ initialModel =
 
 type Msg =
     NewEntries (Result Http.Error String)
+    | Tick Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -37,13 +39,16 @@ update msg model =
             let
                 _= Debug.log "It worked! " jsonString
             in
-                ({model | ultimasSenhas = jsonString :: model.ultimasSenhas}, Cmd.none)
+                ({model | ultimasSenhas = [jsonString]}, Cmd.none)
 
         NewEntries (Err error) ->
             let
                 _ = Debug.log "Oops, not as we wished! " error
             in
                 (model, Cmd.none)
+
+        Tick _ ->
+            (model, getEntries)
 
 
 
@@ -83,6 +88,11 @@ getEntries =
     Http.get{url = "http://localhost:8080/ultimas-senhas"
     ,expect = Http.expectString NewEntries}
 
+---- SUBSCRPTIONS ----
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Time.every 2000 Tick
+
 ---- PROGRAM ----
 
 
@@ -92,5 +102,5 @@ main =
         { view = view
         , init = \_ -> init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
