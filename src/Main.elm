@@ -5,30 +5,32 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
 import Time
+import Json.Decode exposing (Decoder, int, list, string, succeed)
+import Json.Decode.Pipeline exposing (required)
+
 
 ---- MODEL ----
 
 
-type alias Model =
-    {emAtendimento: List Senha
-    , ultimasSenhas: List Senha}
+type alias Model = {senhas: List Senha}
 
-type alias Senha = String
+type alias Senha = {codigo: String, status: String}
+
+senhaDecoder : Json.Decode.Decoder Senha
+senhaDecoder =
+    Json.Decode.succeed Senha
+    |> Json.Decode.Pipeline.required "codigo" string
+    |> Json.Decode.Pipeline.required "status" string
 
 init : ( Model, Cmd Msg )
 init =
-    ( initialModel, getEntries )
-
-initialModel : Model
-initialModel = 
-    {emAtendimento = ["P002", "C003"]
-    , ultimasSenhas = ["P003", "P004"]}
+    ( {senhas = []}, getEntries )
 
 ---- UPDATE ----
 
 
 type Msg =
-    NewEntries (Result Http.Error String)
+    NewEntries (Result Http.Error (List Senha))
     | Tick Time.Posix
 
 
@@ -39,7 +41,7 @@ update msg model =
             let
                 _= Debug.log "It worked! " jsonString
             in
-                ({model | ultimasSenhas = [jsonString]}, Cmd.none)
+                ({model | senhas = jsonString}, Cmd.none)
 
         NewEntries (Err error) ->
             let
@@ -58,9 +60,20 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ viewEmAtendimento model
+        [ viewSenhas model
         , viewultimasSenhas model
+        , viewSenhasFinalizadas model
         ]
+
+viewSenhas : Model -> Html Msg
+viewSenhas model =
+    div [] [
+            text "Todas as senhas"
+        , div [] [
+                    div []
+        (List.map (\senha -> p [] [text (senha.codigo ++ " "++ senha.status)]) model.senhas)
+                ]
+    ]
 
 viewEmAtendimento : Model -> Html Msg
 viewEmAtendimento model =
@@ -68,7 +81,14 @@ viewEmAtendimento model =
             text "Em atendimento"
         , div [] [
                     div []
-        (List.map (\senha -> p [] [text senha]) model.emAtendimento)
+                        (List.map 
+                            (\senha -> 
+                                if senha.status == "EMATENDIMENTO" then
+                                    p [] [text (senha.codigo ++ " "++ senha.status)]
+                                else
+                                    text ""
+                            ) 
+                            model.senhas)
                 ]
     ]
 
@@ -76,18 +96,43 @@ viewultimasSenhas : Model -> Html Msg
 viewultimasSenhas model =
     div [] [
             text "Senhas solicitadas"
-            ,div []
-                    (List.map (\senha -> p [] [text senha]) model.ultimasSenhas)
-            ]
-    
+        , div [] [
+                    div []
+                        (List.map 
+                            (\senha -> 
+                                if senha.status == "ENCAMINHADA" then
+                                    p [] [text (senha.codigo ++ " "++ senha.status)]
+                                else
+                                    text ""
+                            ) 
+                            model.senhas)
+                ]
+    ]    
+
+viewSenhasFinalizadas : Model -> Html Msg
+viewSenhasFinalizadas model =
+    div [] [
+            text "Senhas finalizadas"
+        , div [] [
+                    div []
+                        (List.map 
+                            (\senha -> 
+                                if senha.status == "FINALIZADA" then
+                                    p [] [text (senha.codigo ++ " "++ senha.status)]
+                                else
+                                    text ""
+                            ) 
+                            model.senhas)
+                ]
+    ]  
 
 ---- COMMANDS ---    
 
 getEntries : Cmd Msg
 getEntries = 
-    Http.get{url = "http://localhost:8080/ultimas-senhas"
-    ,expect = Http.expectString NewEntries}
-
+    Http.get{
+        url = "http://localhost:8080/senhas"
+        ,expect = Http.expectJson NewEntries (Json.Decode.list senhaDecoder)}
 ---- SUBSCRPTIONS ----
 subscriptions : Model -> Sub Msg
 subscriptions model =
