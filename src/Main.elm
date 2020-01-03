@@ -5,7 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
 import Time
-import Json.Decode exposing (Decoder, int, list, string, succeed)
+import Json.Decode exposing (list, string, succeed, fail)
 import Json.Decode.Pipeline exposing (required)
 
 
@@ -14,14 +14,34 @@ import Json.Decode.Pipeline exposing (required)
 
 type alias Model = {senhas: List Senha}
 
-type alias Senha = {codigo: String, status: String}
+type alias Senha = {codigo: String, status: Estado}
+
+type Estado = Emitida | Encaminhada | EmAtendimento | Finalizada
+
 
 senhaDecoder : Json.Decode.Decoder Senha
 senhaDecoder =
     Json.Decode.succeed Senha
     |> Json.Decode.Pipeline.required "codigo" string
-    |> Json.Decode.Pipeline.required "status" string
+    |> Json.Decode.Pipeline.required "status" statusDecoder
 
+statusDecoder : Json.Decode.Decoder Estado
+statusDecoder =
+    Json.Decode.string |>
+    Json.Decode.andThen (\str ->
+        case str of
+           "EMITIDA" -> 
+               Json.Decode.succeed Emitida
+           "ENCAMINHADA" -> 
+               Json.Decode.succeed Encaminhada
+           "EMATENDIMENTO" -> 
+               Json.Decode.succeed EmAtendimento
+           "FINALIZADA" -> 
+               Json.Decode.succeed Finalizada
+        
+           _ ->
+               Json.Decode.fail "Nao consegui decodar a senha"
+        )
 init : ( Model, Cmd Msg )
 init =
     ( {senhas = []}, getEntries )
@@ -60,9 +80,11 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ viewSenhas model
-        , viewultimasSenhas model
-        , viewSenhasFinalizadas model
+        [ 
+        viewSenha model Encaminhada "Senhas solicitadas"
+        , viewSenha model EmAtendimento "Senhas em atendimento"
+        , viewSenha model Finalizada "Senhas finalizadas"
+        , viewSenhas model
         ]
 
 viewSenhas : Model -> Html Msg
@@ -71,60 +93,27 @@ viewSenhas model =
             text "Todas as senhas"
         , div [] [
                     div []
-        (List.map (\senha -> p [] [text (senha.codigo ++ " "++ senha.status)]) model.senhas)
+        (List.map (\senha -> p [] [text senha.codigo]) model.senhas)
                 ]
     ]
 
-viewEmAtendimento : Model -> Html Msg
-viewEmAtendimento model =
+viewSenha : Model -> Estado-> String -> Html Msg
+viewSenha model estado texto=
     div [] [
-            text "Em atendimento"
-        , div [] [
-                    div []
-                        (List.map 
-                            (\senha -> 
-                                if senha.status == "EMATENDIMENTO" then
-                                    p [] [text (senha.codigo ++ " "++ senha.status)]
-                                else
-                                    text ""
-                            ) 
-                            model.senhas)
-                ]
+            text texto
+            , div [] [
+                        div []
+                            (List.map 
+                                (\senha -> 
+                                    if senha.status == estado then
+                                        p [] [text senha.codigo]
+                                    else
+                                        text ""
+                                ) 
+                                model.senhas)
+                    ]
     ]
 
-viewultimasSenhas : Model -> Html Msg
-viewultimasSenhas model =
-    div [] [
-            text "Senhas solicitadas"
-        , div [] [
-                    div []
-                        (List.map 
-                            (\senha -> 
-                                if senha.status == "ENCAMINHADA" then
-                                    p [] [text (senha.codigo ++ " "++ senha.status)]
-                                else
-                                    text ""
-                            ) 
-                            model.senhas)
-                ]
-    ]    
-
-viewSenhasFinalizadas : Model -> Html Msg
-viewSenhasFinalizadas model =
-    div [] [
-            text "Senhas finalizadas"
-        , div [] [
-                    div []
-                        (List.map 
-                            (\senha -> 
-                                if senha.status == "FINALIZADA" then
-                                    p [] [text (senha.codigo ++ " "++ senha.status)]
-                                else
-                                    text ""
-                            ) 
-                            model.senhas)
-                ]
-    ]  
 
 ---- COMMANDS ---    
 
