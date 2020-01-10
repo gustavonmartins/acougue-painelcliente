@@ -99,22 +99,10 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ viewSenha model Encaminhada "Senhas solicitadas"
-        , viewSenha model EmAtendimento "Senhas em atendimento"
-        , viewSenha model Finalizada "Senhas finalizadas"
-        , viewSenhas model
-        ]
-
-
-viewSenhas : Model -> Html Msg
-viewSenhas model =
-    div []
-        [ text "Todas as senhas"
-        , div []
-            [ div []
-                (List.map (\senha -> p [] [ text senha.codigo ]) model.senhas)
-            ]
+    div [ class "columns" ]
+        [ div [ class "column is-one-third" ] <| viewSenha model Emitida "Senhas emitidas" :: []
+        , div [ class "column is-one-third" ] <| viewSenha model Encaminhada "Dirigir-se ao balcao" :: []
+        , div [ class "column is-one-third" ] <| viewSenha model EmAtendimento "Senhas em atendimento" :: []
         ]
 
 
